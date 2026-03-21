@@ -1,23 +1,15 @@
-# ============================================================
-#  LearnHub — Online Course Platform
-#  Production-level FastAPI Backend | Single File
-#  All 20 Tasks Implemented | Days 1–6 Concepts Covered
-# ============================================================
+
 
 from fastapi import FastAPI, Query, Response
 from pydantic import BaseModel, Field
 import math
 
-# ── App Initialisation ───────────────────────────────────────
 app = FastAPI(
     title="LearnHub — Online Course Platform",
     description="Production-level FastAPI backend for an online course platform.",
     version="1.0.0"
 )
 
-# ============================================================
-#  IN-MEMORY DATA STORE
-# ============================================================
 
 courses = [
     {
@@ -91,11 +83,7 @@ wishlist     = []
 enrollment_counter = 1   # auto-increment IDs
 course_counter     = 8   # next course ID
 
-# ============================================================
-#  PYDANTIC MODELS — Request Body Validation
-# ============================================================
 
-# ── Enroll in a course ───────────────────────────────────────
 class EnrollRequest(BaseModel):
     student_name   : str  = Field(..., min_length=2,  description="Full name of the student")
     course_id      : int  = Field(..., gt=0,           description="ID of the course to enrol in")
@@ -105,7 +93,7 @@ class EnrollRequest(BaseModel):
     gift_enrollment: bool = Field(False,               description="Is this a gift enrolment?")
     recipient_name : str  = Field("",                  description="Required when gift_enrollment=True")
 
-# ── Add a new course ─────────────────────────────────────────
+
 class NewCourse(BaseModel):
     title      : str = Field(..., min_length=2)
     instructor : str = Field(..., min_length=2)
@@ -114,14 +102,12 @@ class NewCourse(BaseModel):
     price      : int = Field(..., ge=0)
     seats_left : int = Field(..., gt=0)
 
-# ── Enrol all wishlist items ──────────────────────────────────
+
 class WishlistEnrollRequest(BaseModel):
     student_name   : str = Field(..., min_length=2)
     payment_method : str = Field("card")
 
-# ============================================================
-#  HELPER FUNCTIONS — No @app decorator
-# ============================================================
+
 
 def find_course(course_id: int):
     """Return the course dict if found, else None."""
@@ -143,13 +129,12 @@ def calculate_enrollment_fee(price: int, seats_left: int, coupon_code: str) -> d
     working_price    = price
     discounts_applied = []
 
-    # Early-bird discount
     if seats_left > 5:
         discount_amt  = round(working_price * 0.10)
         working_price -= discount_amt
         discounts_applied.append(f"Early-bird 10% off  → -₹{discount_amt}")
 
-    # Coupon discount
+
     coupon = coupon_code.strip().upper()
     if coupon == "STUDENT20":
         discount_amt  = round(working_price * 0.20)
@@ -193,10 +178,6 @@ def filter_courses_logic(
     return result
 
 
-# ============================================================
-#  TASK 1 — HOME ROUTE  (Day 1)
-# ============================================================
-
 @app.get("/", tags=["General"])
 def home():
     """Welcome endpoint."""
@@ -208,12 +189,6 @@ def home():
     }
 
 
-# ============================================================
-#  TASKS 5 / 10 / 16 / 17 / 18 / 20 — FIXED ROUTES
-#  These MUST come before  GET /courses/{course_id}
-# ============================================================
-
-# ── TASK 5 — Summary (Day 1) ─────────────────────────────────
 @app.get("/courses/summary", tags=["Courses"])
 def courses_summary():
     """Return aggregate statistics for all courses."""
@@ -241,7 +216,7 @@ def courses_summary():
     }
 
 
-# ── TASK 10 — Filter  (Day 3) ────────────────────────────────
+
 @app.get("/courses/filter", tags=["Courses"])
 def filter_courses(
     category  : str  = Query(None, description="Filter by category"),
@@ -263,7 +238,6 @@ def filter_courses(
     }
 
 
-# ── TASK 16 — Search  (Day 6) ────────────────────────────────
 @app.get("/courses/search", tags=["Courses"])
 def search_courses(keyword: str = Query(..., min_length=1, description="Search keyword")):
     """Case-insensitive search across title, instructor, and category."""
@@ -284,7 +258,6 @@ def search_courses(keyword: str = Query(..., min_length=1, description="Search k
     return {"keyword": keyword, "total_found": len(results), "results": results}
 
 
-# ── TASK 17 — Sort  (Day 6) ──────────────────────────────────
 VALID_SORT_FIELDS = ["price", "title", "seats_left"]
 
 @app.get("/courses/sort", tags=["Courses"])
@@ -307,7 +280,6 @@ def sort_courses(
     }
 
 
-# ── TASK 18 — Pagination  (Day 6) ────────────────────────────
 @app.get("/courses/page", tags=["Courses"])
 def paginate_courses(
     page : int = Query(1, ge=1,  description="Page number (starts at 1)"),
@@ -329,8 +301,6 @@ def paginate_courses(
         "courses"     : sliced,
     }
 
-
-# ── TASK 20 — Combined /browse  (Day 6 + Day 3) ──────────────
 @app.get("/courses/browse", tags=["Courses"])
 def browse_courses(
     keyword  : str  = Query(None, description="Search keyword"),
@@ -352,7 +322,6 @@ def browse_courses(
     if order not in ["asc", "desc"]:
         return {"error": "Invalid order. Use 'asc' or 'desc'."}
 
-    # Step 1: keyword search
     result = courses[:]
     if keyword is not None:
         kw     = keyword.lower()
@@ -363,13 +332,13 @@ def browse_courses(
             or kw in c["category"].lower()
         ]
 
-    # Step 2: apply filters
+   
     result = filter_courses_logic(result, category, level, max_price, has_seats)
 
-    # Step 3: sort
+   
     result = sorted(result, key=lambda c: c[sort_by], reverse=(order == "desc"))
 
-    # Step 4: paginate
+
     total       = len(result)
     total_pages = math.ceil(total / limit) if total > 0 else 1
     start       = (page - 1) * limit
@@ -394,9 +363,6 @@ def browse_courses(
     }
 
 
-# ============================================================
-#  TASKS 2 & 3 — GET ALL COURSES / GET COURSE BY ID  (Day 1)
-# ============================================================
 
 @app.get("/courses", tags=["Courses"])
 def get_all_courses():
@@ -419,9 +385,6 @@ def get_course_by_id(course_id: int):
     return course
 
 
-# ============================================================
-#  TASK 4 — GET ALL ENROLLMENTS  (Day 1)
-# ============================================================
 
 @app.get("/enrollments", tags=["Enrollments"])
 def get_all_enrollments():
@@ -431,12 +394,7 @@ def get_all_enrollments():
         "total_enrollments": len(enrollments),
         "total_revenue"    : total_revenue,
         "enrollments"      : enrollments,
-    }
-
-
-# ============================================================
-#  TASKS 8 & 9 — POST /enrollments  (Day 2 + Day 3)
-# ============================================================
+    
 
 @app.post("/enrollments", tags=["Enrollments"], status_code=201)
 def create_enrollment(data: EnrollRequest, response: Response = None):
@@ -448,7 +406,7 @@ def create_enrollment(data: EnrollRequest, response: Response = None):
     """
     global enrollment_counter
 
-    # Task 9 — gift enrollment requires recipient name
+
     if data.gift_enrollment and not data.recipient_name.strip():
         return {"error": "recipient_name is required when gift_enrollment is True."}
 
@@ -458,10 +416,9 @@ def create_enrollment(data: EnrollRequest, response: Response = None):
     if course["seats_left"] <= 0:
         return {"error": f"'{course['title']}' is fully booked. No seats remaining.", "status": 400}
 
-    # Calculate fee
+
     fee_info = calculate_enrollment_fee(course["price"], course["seats_left"], data.coupon_code)
 
-    # Reduce seat count
     course["seats_left"] -= 1
 
     enrollment = {
@@ -489,10 +446,6 @@ def create_enrollment(data: EnrollRequest, response: Response = None):
     return {"message": "Enrollment confirmed!", "enrollment": enrollment}
 
 
-# ============================================================
-#  TASK 19 — ENROLLMENT SEARCH / SORT / PAGE (Day 6)
-#  Fixed routes MUST come before variable /enrollments/{id}
-# ============================================================
 
 @app.get("/enrollments/search", tags=["Enrollments"])
 def search_enrollments(student_name: str = Query(..., min_length=1)):
@@ -538,11 +491,6 @@ def paginate_enrollments(
     }
 
 
-# ============================================================
-#  TASKS 11–13 — COURSE CRUD  (Day 4)
-# ============================================================
-
-# ── Task 11 — POST /courses (create) ─────────────────────────
 @app.post("/courses", tags=["CRUD — Courses"], status_code=201)
 def add_course(data: NewCourse, response: Response = None):
     """
@@ -573,7 +521,6 @@ def add_course(data: NewCourse, response: Response = None):
     return {"message": "Course added successfully!", "course": new_course}
 
 
-# ── Task 12 — PUT /courses/{course_id} (update) ──────────────
 @app.put("/courses/{course_id}", tags=["CRUD — Courses"])
 def update_course(
     course_id  : int,
@@ -603,7 +550,6 @@ def update_course(
     return {"message": "Course updated successfully!", "changes_applied": changes, "course": course}
 
 
-# ── Task 13 — DELETE /courses/{course_id} ────────────────────
 @app.delete("/courses/{course_id}", tags=["CRUD — Courses"])
 def delete_course(course_id: int):
     """
@@ -626,11 +572,7 @@ def delete_course(course_id: int):
     return {"message": f"Course '{course['title']}' deleted successfully.", "deleted_course_id": course_id}
 
 
-# ============================================================
-#  TASKS 14 & 15 — WISHLIST WORKFLOW  (Day 5)
-# ============================================================
 
-# ── Task 14a — GET /wishlist ──────────────────────────────────
 @app.get("/wishlist", tags=["Wishlist"])
 def get_wishlist():
     """Return the full wishlist with total value."""
@@ -645,8 +587,6 @@ def get_wishlist():
         "wishlist"           : wishlist,
     }
 
-
-# ── Task 14b — POST /wishlist/add ────────────────────────────
 @app.post("/wishlist/add", tags=["Wishlist"])
 def add_to_wishlist(
     student_name: str = Query(..., min_length=2),
@@ -678,7 +618,7 @@ def add_to_wishlist(
     return {"message": f"'{course['title']}' added to {student_name}'s wishlist.", "item": item}
 
 
-# ── Task 15a — DELETE /wishlist/remove/{course_id} ───────────
+
 @app.delete("/wishlist/remove/{course_id}", tags=["Wishlist"])
 def remove_from_wishlist(course_id: int, student_name: str = Query(..., min_length=2)):
     """Remove one item from a student's wishlist."""
@@ -695,7 +635,6 @@ def remove_from_wishlist(course_id: int, student_name: str = Query(..., min_leng
     return {"message": f"Removed '{item['course_title']}' from {student_name}'s wishlist."}
 
 
-# ── Task 15b — POST /wishlist/enroll-all (full workflow) ─────
 @app.post("/wishlist/enroll-all", tags=["Wishlist"], status_code=201)
 def enroll_all_from_wishlist(data: WishlistEnrollRequest, response: Response = None):
     """
@@ -751,7 +690,6 @@ def enroll_all_from_wishlist(data: WishlistEnrollRequest, response: Response = N
         confirmed.append(enrollment)
         grand_total += fee_info["final_fee"]
 
-    # Remove successfully enrolled items from wishlist
     for item in student_items:
         if item in wishlist:
             wishlist.remove(item)
