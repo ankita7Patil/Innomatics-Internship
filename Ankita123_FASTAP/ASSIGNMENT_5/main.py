@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query
 
 app = FastAPI()
 
-# Sample data
+
 products = [
     {"id": 1, "name": "Wireless Mouse", "price": 499, "category": "Electronics"},
     {"id": 2, "name": "Notebook", "price": 99, "category": "Stationery"},
@@ -13,9 +13,7 @@ products = [
 orders = []
 
 
-# -----------------------------
-# EXISTING ENDPOINTS (Q1–Q3)
-# -----------------------------
+
 
 @app.get("/products/search")
 def search_products(keyword: str):
@@ -63,9 +61,6 @@ def paginate_products(
     }
 
 
-# -----------------------------
-# ORDERS (for Q4)
-# -----------------------------
 
 @app.post("/orders")
 def create_order(customer_name: str):
@@ -77,9 +72,7 @@ def create_order(customer_name: str):
     return order
 
 
-# -----------------------------
-# Q4: SEARCH ORDERS
-# -----------------------------
+
 
 @app.get("/orders/search")
 def search_orders(customer_name: str = Query(...)):
@@ -98,9 +91,6 @@ def search_orders(customer_name: str = Query(...)):
     }
 
 
-# -----------------------------
-# Q5: SORT BY CATEGORY + PRICE
-# -----------------------------
 
 @app.get("/products/sort-by-category")
 def sort_by_category():
@@ -112,9 +102,6 @@ def sort_by_category():
     }
 
 
-# -----------------------------
-# Q6: SEARCH + SORT + PAGINATE
-# -----------------------------
 
 @app.get("/products/browse")
 def browse_products(
@@ -126,15 +113,15 @@ def browse_products(
 ):
     result = products
 
-    # SEARCH
+  
     if keyword:
         result = [p for p in result if keyword.lower() in p["name"].lower()]
 
-    # SORT
+
     if sort_by in ["price", "name"]:
         result = sorted(result, key=lambda p: p[sort_by], reverse=(order == "desc"))
 
-    # PAGINATION
+
     total = len(result)
     start = (page - 1) * limit
     paged = result[start:start + limit]
@@ -151,9 +138,6 @@ def browse_products(
     }
 
 
-# -----------------------------
-# BONUS: PAGINATE ORDERS
-# -----------------------------
 
 @app.get("/orders/page")
 def paginate_orders(
